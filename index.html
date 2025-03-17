@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spree</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            text-align: center;
+        }
+        #word-display {
+            font-size: 2rem;
+            margin: 20px 0;
+        }
+        .controls {
+            margin-top: 10px;
+        }
+        .controls button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .controls button.active {
+            background-color: #007BFF;
+            color: white;
+        }
+        .controls button.inactive {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .speed-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .speed-controls button {
+            padding: 5px 10px;
+            font-size: 1rem;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+        }
+        .speed-controls button:hover {
+            background-color: #0056b3;
+        }
+        .speed-display {
+            padding: 5px 10px;
+            font-size: 1rem;
+            margin: 0 5px;
+            background-color: #ccc;
+            border-radius: 5px;
+        }
+        #file-input {
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 1rem;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+        }
+        .file-label:hover {
+            background-color: #0056b3;
+        }
+        #file-name {
+            margin-top: 10px;
+            font-size: 1rem;
+            color: #555;
+        }
+        #progress {
+            margin-top: 5px;
+            font-size: 1rem;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Spree</h1>
+        <div id="file-name">No file selected</div>
+        <div id="progress"></div>
+        <div id="word-display">Upload an eBook to start</div>
+        <div class="controls">
+            <button id="pause-btn" class="inactive" disabled>Pause</button>
+            <button id="start-btn" class="active">Play</button>
+        </div>
+        <div class="speed-controls">
+            <button id="decrease-speed">&#9664;</button>
+            <div id="speed-display" class="speed-display">300 WPM</div>
+            <button id="increase-speed">&#9654;</button>
+        </div>
+        <label for="file-input" class="file-label">Choose File</label>
+        <input type="file" id="file-input" accept=".epub, .txt">
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/epub.js@0.3.1/dist/epub.js"></script>
+    <script>
+        let words = [];
+        let currentIndex = 0;
+        let intervalId = null;
+        let speed = 300; // Words per minute
+        const wordDisplay = document.getElementById('word-display');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const increaseSpeedBtn = document.getElementById('increase-speed');
+        const decreaseSpeedBtn = document.getElementById('decrease-speed');
+        const speedDisplay = document.getElementById('speed-display');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name');
+        const progressDisplay = document.getElementById('progress');
+
+        // Function to extract text from the EPUB
+        const readEpubFile = (file) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const epub = ePub(event.target.result);
+                epub.ready.then(() => {
+                    let totalText = "";
+
+                    // Extract text from the EPUB
+                    epub.flow().then((flows) => {
+                        let promises = [];
+                        flows.forEach((flow) => {
+                            promises.push(
+                                flow.getText().then((text) => {
+                                    totalText += text + "\n";
+                                })
+                            );
+                        });
+
+                        Promise.all(promises).then(() => {
+                            words = totalText.split(/\s+/);
+                            currentIndex = 0;
+                            wordDisplay.textContent = "Ready to play";
+                            progressDisplay.textContent = "0% completed";
+                            startBtn.disabled = false;
+                            startBtn.classList.add('active');
+                            pauseBtn.disabled = true;
+                            pauseBtn.classList.remove('active');
+                            pauseBtn.classList.add('inactive');
+                        });
+                    }).catch((err) => {
+                        console.error('Error extracting text from EPUB:', err);
+                        wordDisplay.textContent = "Error reading EPUB file.";
+                    });
+                }).catch((err) => {
+                    console.error('Error loading EPUB:', err);
+                    wordDisplay.textContent = "Error loading EPUB file.";
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        // Function to read TXT file
+        const readTxtFile = (file) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                words = text.split(/\s+/);
+                currentIndex = 0;
+                wordDisplay.textContent = "Ready to play";
+                progressDisplay.textContent = "0% completed";
+                startBtn.disabled = false; // Enable play button
+                startBtn.classList.add('active');
+                pauseBtn.disabled = true;
+                pauseBtn.classList.remove('active');
+                pauseBtn.classList.add('inactive');
+            };
+            reader.readAsText(file);
+        };
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            fileNameDisplay.textContent = file.name;
+
+            if (file.name.endsWith('.epub')) {
+                wordDisplay.textContent = "Loading EPUB file...";
+                readEpubFile(file);
+            } else if (file.name.endsWith('.txt')) {
+                wordDisplay.textContent = "Loading TXT file...";
+                readTxtFile(file);
+            } else {
+                wordDisplay.textContent = "Please upload a valid EPUB or TXT file.";
+                startBtn.disabled = true;
+            }
+        });
+
+        const displayNextWord = () => {
+            if (currentIndex < words.length) {
+                wordDisplay.textContent = words[currentIndex++];
+                const progress = ((currentIndex / words.length) * 100).toFixed(1);
+                progressDisplay.textContent = `${progress}% completed`;
+            } else {
+                clearInterval(intervalId);
+                wordDisplay.textContent = "End of file";
+                startBtn.disabled = false;
+                startBtn.classList.add('active');
+                pauseBtn.disabled = true;
+                pauseBtn.classList.remove('active');
+                pauseBtn.classList.add('inactive');
+            }
+        };
+
+        const updateSpeedDisplay = () => {
+            speedDisplay.textContent = `${speed} WPM`;
+        };
+
+        const adjustSpeed = (amount) => {
+            speed = Math.max(50, Math.min(1000, speed + amount));
+            updateSpeedDisplay();
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = setInterval(displayNextWord, 60000 / speed);
+            }
+        };
+
+        startBtn.addEventListener('click', () => {
+            if (words.length === 0) return;
+
+            startBtn.disabled = true;
+            startBtn.classList.remove('active');
+            startBtn.classList.add('inactive');
+            pauseBtn.disabled = false;
+            pauseBtn.classList.add('active');
+            pauseBtn.classList.remove('inactive');
+
+            intervalId = setInterval(displayNextWord, 60000 / speed);
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            clearInterval(intervalId);
+            startBtn.disabled = false;
+            startBtn.classList.add('active');
+            startBtn.classList.remove('inactive');
+            pauseBtn.disabled = true;
+            pauseBtn.classList.remove('active');
+            pauseBtn.classList.add('inactive');
+        });
+
+        increaseSpeedBtn.addEventListener('click', () => adjustSpeed(50));
+        decreaseSpeedBtn.addEventListener('click', () => adjustSpeed(-50));
+
+        updateSpeedDisplay();
+    </script>
+</body>
+</html>
