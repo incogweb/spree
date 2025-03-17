@@ -1,5 +1,5 @@
 # **📖 Spree**  
-A web app designed to make reading fast and easy. **Still in progress**
+A web app designed to make reading fast and easy. **Still in progress.**
 
 ---
 
