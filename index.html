@@ -1,121 +1,229 @@
+<!-- CURRENTLY THE EPUB CONVERT FEATURE IS BROKEN -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spree</title>
+    <title>Spree | Speed Reader</title>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #ffffff;
+            --secondary: #cccccc;
+            --accent: #6f6b6b;
+            --bg: #000000;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --highlight: #007BFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--primary);
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.6;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f9;
-            color: #333;
+            padding: 2rem;
         }
+
         .container {
+            max-width: 800px;
+            width: 100%;
             text-align: center;
+            background: rgba(52, 52, 52, 0.2);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+
         #word-display {
-            font-size: 2rem;
-            margin: 20px 0;
+            font-size: 3rem;
+            margin: 2rem 0;
+            min-height: 4rem;
+            font-weight: 600;
+            color: var(--highlight);
         }
+
         .controls {
-            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
         }
-        .controls button {
-            padding: 10px 20px;
+
+        button {
+            padding: 0.8rem 1.5rem;
             font-size: 1rem;
-            margin: 5px;
+            font-family: 'Montserrat', sans-serif;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--card-bg);
+            color: var(--primary);
+            font-weight: 600;
         }
-        .controls button.active {
-            background-color: #007BFF;
-            color: white;
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        .controls button.inactive {
-            background-color: #ccc;
-            color: #666;
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.active {
+            background: var(--highlight);
+        }
+
+        button.inactive {
+            opacity: 0.5;
             cursor: not-allowed;
         }
+
         .speed-controls {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 10px;
+            margin: 1.5rem 0;
+            gap: 1rem;
         }
-        .speed-controls button {
-            padding: 5px 10px;
-            font-size: 1rem;
-            margin: 0 5px;
-            border: none;
+
+        .speed-display {
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border-radius: 5px;
+            min-width: 100px;
+            font-weight: 600;
+        }
+
+        .file-upload {
+            margin: 1.5rem 0;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: var(--highlight);
+            color: white;
             border-radius: 5px;
             cursor: pointer;
-            background-color: #007BFF;
-            color: white;
+            transition: all 0.2s ease;
+            font-weight: 600;
         }
-        .speed-controls button:hover {
-            background-color: #0056b3;
+
+        .file-label:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        .speed-display {
-            padding: 5px 10px;
-            font-size: 1rem;
-            margin: 0 5px;
-            background-color: #ccc;
-            border-radius: 5px;
-        }
+
         #file-input {
             display: none;
         }
-        .file-label {
-            display: inline-block;
-            padding: 10px 20px;
-            font-size: 1rem;
-            margin: 10px 0;
-            border: none;
+
+        .status {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .status-item {
+            background: var(--card-bg);
+            padding: 0.5rem 1rem;
             border-radius: 5px;
-            cursor: pointer;
-            background-color: #007BFF;
-            color: white;
-            text-align: center;
+            font-size: 0.9rem;
         }
-        .file-label:hover {
-            background-color: #0056b3;
+
+        progress {
+            width: 100%;
+            height: 6px;
+            margin-top: 0.5rem;
+            border-radius: 3px;
+            overflow: hidden;
         }
-        #file-name {
-            margin-top: 10px;
-            font-size: 1rem;
-            color: #555;
+
+        progress::-webkit-progress-bar {
+            background-color: var(--card-bg);
+            border-radius: 3px;
         }
-        #progress {
-            margin-top: 5px;
-            font-size: 1rem;
-            color: #777;
+
+        progress::-webkit-progress-value {
+            background-color: var(--highlight);
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            #word-display {
+                font-size: 2.5rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 200px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Spree</h1>
-        <div id="file-name">No file selected</div>
-        <div id="progress"></div>
-        <div id="word-display">Upload an eBook to start</div>
+        <div id="word-display">Upload a file to begin</div>
+        
+        <div class="file-upload">
+            <label for="file-input" class="file-label">Choose File (EPUB or TXT)</label>
+            <input type="file" id="file-input" accept=".epub, .txt">
+        </div>
+        
+        <div class="status">
+            <div id="file-name" class="status-item">No file selected</div>
+            <div id="progress" class="status-item">0% completed</div>
+            <progress id="progress-bar" value="0" max="100"></progress>
+        </div>
+        
         <div class="controls">
             <button id="pause-btn" class="inactive" disabled>Pause</button>
             <button id="start-btn" class="active">Play</button>
         </div>
+        
         <div class="speed-controls">
-            <button id="decrease-speed">&#9664;</button>
+            <button id="decrease-speed">-</button>
             <div id="speed-display" class="speed-display">300 WPM</div>
-            <button id="increase-speed">&#9654;</button>
+            <button id="increase-speed">+</button>
         </div>
-        <label for="file-input" class="file-label">Choose File</label>
-        <input type="file" id="file-input" accept=".epub, .txt">
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/epub.js@0.3.1/dist/epub.js"></script>
@@ -133,6 +241,7 @@
         const fileInput = document.getElementById('file-input');
         const fileNameDisplay = document.getElementById('file-name');
         const progressDisplay = document.getElementById('progress');
+        const progressBar = document.getElementById('progress-bar');
 
         // Function to extract text from the EPUB
         const readEpubFile = (file) => {
@@ -154,12 +263,14 @@
                         });
 
                         Promise.all(promises).then(() => {
-                            words = totalText.split(/\s+/);
+                            words = totalText.split(/\s+/).filter(word => word.length > 0);
                             currentIndex = 0;
                             wordDisplay.textContent = "Ready to play";
                             progressDisplay.textContent = "0% completed";
+                            progressBar.value = 0;
                             startBtn.disabled = false;
                             startBtn.classList.add('active');
+                            startBtn.classList.remove('inactive');
                             pauseBtn.disabled = true;
                             pauseBtn.classList.remove('active');
                             pauseBtn.classList.add('inactive');
@@ -181,12 +292,14 @@
             const reader = new FileReader();
             reader.onload = (event) => {
                 const text = event.target.result;
-                words = text.split(/\s+/);
+                words = text.split(/\s+/).filter(word => word.length > 0);
                 currentIndex = 0;
                 wordDisplay.textContent = "Ready to play";
                 progressDisplay.textContent = "0% completed";
-                startBtn.disabled = false; // Enable play button
+                progressBar.value = 0;
+                startBtn.disabled = false;
                 startBtn.classList.add('active');
+                startBtn.classList.remove('inactive');
                 pauseBtn.disabled = true;
                 pauseBtn.classList.remove('active');
                 pauseBtn.classList.add('inactive');
@@ -209,6 +322,8 @@
             } else {
                 wordDisplay.textContent = "Please upload a valid EPUB or TXT file.";
                 startBtn.disabled = true;
+                startBtn.classList.remove('active');
+                startBtn.classList.add('inactive');
             }
         });
 
@@ -217,11 +332,13 @@
                 wordDisplay.textContent = words[currentIndex++];
                 const progress = ((currentIndex / words.length) * 100).toFixed(1);
                 progressDisplay.textContent = `${progress}% completed`;
+                progressBar.value = progress;
             } else {
                 clearInterval(intervalId);
-                wordDisplay.textContent = "End of file";
+                wordDisplay.textContent = "Reading complete!";
                 startBtn.disabled = false;
                 startBtn.classList.add('active');
+                startBtn.classList.remove('inactive');
                 pauseBtn.disabled = true;
                 pauseBtn.classList.remove('active');
                 pauseBtn.classList.add('inactive');
